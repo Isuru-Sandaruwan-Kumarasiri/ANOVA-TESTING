@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-##                                     One-Way ANOVA
+## One-Way ANOVA
 
 ANOVA (Analysis of Variance) is mainly used when your independent variable(s) are categorical and your dependent variable is continuous (numerical).
 
@@ -63,29 +63,21 @@ one_way_anova <- aov(Sepal.Length ~ Species , data = iris)
  summary(one_way_anova)
 ```
 
-P −Value \< 0.05. So, we reject H0. We can conclude that, there is
-a statistical difference between the mean of the sepal length
-according to the type of the iris plant at 5% level of significance.
+P −Value \< 0.05. So, we reject H0. We can conclude that, there is a statistical difference between the mean of the sepal length according to the type of the iris plant at 5% level of significance.
 
 #### Multiple Comparisons (POST-HOC TESTS)
 
-If the test rejects H0 , the one-way ANOVA test does not inform
-which group has a different mean. Then run a pairwise t-test for
-multiple comparison and identify the different groups.
+If the test rejects H0 , the one-way ANOVA test does not inform which group has a different mean. Then run a pairwise t-test for multiple comparison and identify the different groups.
 
 ```{r}
 pairwise.t.test(iris$Sepal.Length,iris$Species,p.adj="bonferroni")
 ```
 
--   Based on P-values \< 0.05, all the three species combinations are
-    differ according to the Sepal Length.
+-   Based on P-values \< 0.05, all the three species combinations are differ according to the Sepal Length.
 
--    There are several possible adjustment methods: “**bonferroni**”,
-    “**holm**”, “**hochberg**”, “**hommel**”, “**BH**”
+-   There are several possible adjustment methods: “**bonferroni**”, “**holm**”, “**hochberg**”, “**hommel**”, “**BH**”
 
--   Tukey’s Honest Significant Differences (Tukey’s HSD) is also a
-    very common test that we can use for multiple comparisons. It
-    requires an anova object.
+-   Tukey’s Honest Significant Differences (Tukey’s HSD) is also a very common test that we can use for multiple comparisons. It requires an anova object.
 
     ```{r}
     pairwise.t.test(iris$Sepal.Length,iris$Species,p.adj="holm")
@@ -99,13 +91,9 @@ pairwise.t.test(iris$Sepal.Length,iris$Species,p.adj="bonferroni")
 
 ### **Normality**
 
-1.  **Analyzing the ANOVA model residuals** to check the normality
-    for all groups together. This approach is easier and it’s very handy
-    when you have many groups or if there are few data points per
-    group.
+1.  **Analyzing the ANOVA model residuals** to check the normality for all groups together. This approach is easier and it’s very handy when you have many groups or if there are few data points per group.
 
-    Normality of residuals can be tested visually via a QQ-plot, and/or
-    formally via a normality test (Shapiro-Wilk test).
+    Normality of residuals can be tested visually via a QQ-plot, and/or formally via a normality test (Shapiro-Wilk test).
 
     ```{r}
     library(car)
@@ -123,9 +111,7 @@ shapiro.test(one_way_anova$residuals)
 
 ```
 
-1.  **Check normality for each group separately**. This approach might
-    be used when you have only a few groups and many data points
-    per group.
+1.  **Check normality for each group separately**. This approach might be used when you have only a few groups and many data points per group.
 
     ```{r}
     iris %>% 
@@ -137,13 +123,9 @@ shapiro.test(one_way_anova$residuals)
 
 ### HOMOGENEITY OF VARIANCES
 
-*The result will have an impact on whether we use the ANOVA
-or the Welch ANOVA.*
+*The result will have an impact on whether we use the ANOVA or the Welch ANOVA.*
 
-We can formally test for equality of the variances with a
-**Levene’s** or **Bartle ’s** test. Notice that the **Levene’s test** is less
-sensitive to departures from normal distribution than the
-**Bartle ’s test**.
+We can formally test for equality of the variances with a **Levene’s** or **Bartle ’s** test. Notice that the **Levene’s test** is less sensitive to departures from normal distribution than the **Bartle ’s test**.
 
 H0 : Variance are equal
 
@@ -186,7 +168,7 @@ pwc3 <- iris %>%
 pwc3
 ```
 
-##                                    Two-Way ANOVA
+## Two-Way ANOVA
 
 Two-Way ANOVA is an extension of One-Way ANOVA, used to examine the effect of two independent categorical variables on one continuous dependent variable — and also their interaction effect.
 
@@ -203,3 +185,167 @@ When to use Two-Way ANOVA:
 2.  Main effect of Factor B
 
 3.  Interaction effect (A × B)
+
+#### example :
+
+```{r}
+#install.packages("rstatix")
+library(rstatix)
+library(datarium)
+library(dplyr)
+
+data("jobsatisfaction")
+attach(jobsatisfaction)
+
+jobsatisfaction %>%
+  group_by(gender,education_level) %>%
+  get_summary_stats(score,type = "mean_sd")
+```
+
+```{r}
+table(jobsatisfaction$gender,jobsatisfaction$education_level)
+```
+
+```{r}
+
+library(car)
+
+ score.lm <- lm(formula = score ~ gender + education_level,data = jobsatisfaction)
+ score.II.aov <- Anova(score.lm, type = 2)
+ score.II.aov
+
+```
+
+#### Next try to Interaction of gender \* education_level
+
+```{r}
+score.lm.int <- lm(formula = score ~ gender * education_level ,data = jobsatisfaction)
+ 
+ score.II.aov2 <- Anova(score.lm.int, type = 2)
+ score.II.aov2
+```
+
+## Checking Assumptions
+
+### 1. Normality
+
+#### QQ Plots for normality.
+
+```{r}
+library(car)
+
+qqPlot(score.lm.int$residuals , id =FALSE )
+```
+
+#### Shapiro Test for Normality
+
+```{r}
+shapiro.test(score.lm.int$residuals)
+```
+
+```{r}
+library(dplyr)
+
+jobsatisfaction %>% 
+  group_by(gender ,education_level) %>%
+  summarize(statistic =shapiro.test(score)$statistic,
+            p.value = shapiro.test(score)$p.value)
+```
+
+### 2. Homogeneity Of Variances
+
+```{r}
+bartlett.test(score ~interaction(gender , education_level),data = jobsatisfaction)
+
+```
+
+```{r}
+leveneTest(score ~ gender * education_level, data = jobsatisfaction)
+```
+
+### POST-HOC TESTS IN TWO-WAY ANOVA
+
+### 1. What does an **interaction** mean?
+
+If the interaction is significant, it means:\
+👉 *The effect of one factor depends on the level of the other factor.*
+
+Example:
+
+-   Suppose Factor A = **teaching method** (Traditional, Online).
+
+-   Factor B = **gender** (Male, Female).
+
+-   Outcome = **test score**.
+
+If there’s an interaction:
+
+-   The teaching method effect might be **strong for males but weak for females** (or vice versa).
+
+```         
+### 2. What to do next?
+
+We don’t stop at “interaction is significant”. We **break it down**:
+
+-    **Simple main effect**:\
+    Look at Factor A’s effect **within each level** of Factor B.\
+    (e.g., compare Traditional vs Online **separately for males**, and then **separately for females**).
+
+-    **Simple pairwise comparisons**:\
+    If the simple main effect is significant, do **pairwise comparisons** to see *exactly which groups differ*.\
+    (e.g., for females, maybe Online is much higher than Traditional; for males, no difference).
+```
+
+```{r}
+### 1 step : group the data by gender and fit anove
+
+
+model <- lm(score ~ gender * education_level ,data =jobsatisfaction)
+
+jobsatisfaction %>%
+  group_by(gender) %>%
+  anova_test(score ~education_level ,error =model)
+```
+
+```{r}
+ ## If first step is significant , then try step 2
+
+
+## Step 2 : Pairwise Comparisons
+
+library(emmeans)
+
+pwc <- jobsatisfaction %>%
+  group_by(gender) %>%
+  emmeans_test(score ~education_level ,p.adjust.method = 'bonferroni')
+
+pwc
+```
+
+There was a significant difference of job satisfaction score between all groups for both males and females.
+
+If the two-way interaction is not statistically significant, you need to consult the main effect for each of the two variables (gender and education_level) in the ANOVA output
+
+##### example 2
+
+```{r}
+score.II.aov2
+```
+
+The main effect of gender was not significant.
+
+Perform pairwise comparisons between education level groups to determine which groups are significantly different.
+
+```{r}
+pairwise.t.test(jobsatisfaction$score ,jobsatisfaction$education_level ,p.adjust.method = 'bonferroni')
+```
+
+or we can use
+
+```{r}
+jobsatisfaction %>%
+  pairwise_t_test(score ~education_level,
+                  p.adjust.method = 'bonferroni')
+```
+
+All pairwise differences were statistically significant (p \<0.05)
