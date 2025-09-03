@@ -1,0 +1,253 @@
+---
+title: "Session_03"
+format: html
+editor: visual
+---
+
+## Permutation
+
+The word permutation refers to the arrangement of set a of object into some specified order .
+
+There are n! permutations for a vector of lenght n.
+
+#### Permutation in R : All Possible Permutations (*permn()*)
+
+```{r}
+library(combinat)
+list <- permn((3))
+# list
+# convert the list to a matrix
+m_list <- do.call(rbind,list)
+
+# take the unique rows
+u_perm <- unique(m_list)
+u_perm
+```
+
+```{r}
+# Next we consider the permuations of the six letter a,b,c,d,e,f
+
+list_l <- permn(c("a","b","c","d","e","f"))
+
+# convert the list to a matrix
+m_list <- do.call(rbind,list_l)  # create a matric (rbind or cbind)
+m_list
+
+# take the unique rows
+u_perm <- unique(m_list)
+dim(u_perm)
+
+```
+
+#### Permutations In R :Generate a Random Permuations
+
+```{r}
+set.seed(10)
+n=10
+
+y=rnorm(n,mean = 0,sd=1)
+sample(y,n,replace = FALSE)  # replace =False means  make a permutations      without replacement  but different from the bootstrap because there we resample data with replacement but here not.
+```
+
+#### Permutation Tests
+
+Permutation tests do not rely on assumptions about the distribution of the data, as some other tests do.They are therefore considered to be nonparametric tests.
+
+Permutation tests work by resampling the observed data many times in order to determine a p value for the test. (Different from the bootstrap because there we resample data with replacement but here not.)
+
+Here we estimate the sampling distribution of the test statistic by calculating the value of the test statistic on all possible permutations of the sample.
+
+##### P-value is calculated as the proportion of permuted datasets that produce a test statistic at least
+
+as extreme as the one observed from the actual data.
+
+##### 
+
+-   **If the null is true**, the shuffled results should look similar to the real data.
+
+-   **If the null is false**, the real data should look noticeably different from the shuffled versions.
+
+Compared with Bootstrap ,order is different but statistical parameters are same(mean ,std,..) .
+
+![](images/clipboard-2109110653.png)
+
+**one bar represents the frequency (count) of permuted test statistics** that fall within a specific range (bin) of values.
+
+The sum of all bar heights equals the total number of permutations (BB, e.g., 10,000).
+
+##### **Two-Tailed Test**
+
+-   Right tail: Permuted statistics ≥2
+
+-   Left tail: Permuted statistics ≤−2 (symmetric to 2 under H0​)
+
+    ex: if 150 permuted statistic are \>=2 and 140 are \<=-2
+
+    P-value =(150+140)/10000=0.029 (assume total permutations are 10000)
+
+    ##### One-Tailed Test
+
+    count permutated statistics \>=2
+
+    P-value =150/(10000) =0.015
+
+#### **Achieved Significance Level (ASL)**
+
+-   **Test Statistic (θ)**:\
+    A function of the data (e.g., mean, median). Larger values indicate stronger evidence against the null hypothesis H0.
+
+-   **ASL Definition**:\
+    The probability of observing a test statistic **θ\*** from permuted data that is ≥ the observed θ *if* H0 is true:
+
+    ASL=P(θ∗≥θ∣H0 true)ASL=P(θ∗≥θ∣H0​ true)
+
+-   **Interpretation**:\
+    ASL is the **permutation-based p-value**. A small ASL rejects H0​.
+
+#### Permutation Vector g:
+
+A vector g =(g1,g2,...gn) where :
+
+-   gi =1 if Xi\>θ (above null value).
+
+-   gi=-1 if Xi \<θ (below null value).
+
+Under H0:
+
+P(Xi\<θ) =0.5 ,so each gi equally likely to be 1 or -1.
+
+Total Permutations : 2\*n Possible g vectors.
+
+#### Permutation Lemma
+
+If H0 : θ=θ0 is ture, every permutation vector g has equal probability:
+
+P(g) =1/2\*n
+
+![](images/Screenshot%20(24)-01.png)
+
+![](images/Screenshot%20(25).png)
+
+```{r}
+perm1samp <- function(x, myfun = mean, mu = 0, nsamp = 10000,
+                     alternative = c("two.sided", "less", "greater")) {
+  x <- x - mu  # Center data under H0
+  n <- length(x)
+  theta_hat <- myfun(x)  # Observed test statistic
+  gmat <- replicate(nsamp, sample(c(1, -1), n, replace = TRUE))  # Sign matrix
+  theta_mc <- apply(gmat * abs(x), 2, myfun)  # Permutation statistics
+  
+  # Calculate p-value based on alternative hypothesis
+  if (alternative[1] == "less") {
+    asl_perm <- sum(theta_mc <= theta_hat) / nsamp
+  } else if (alternative[1] == "greater") {
+    asl_perm <- sum(theta_mc >= theta_hat) / nsamp
+  } else {
+    asl_perm <- sum(abs(theta_mc) >= abs(theta_hat)) / nsamp  # Two-tailed
+  }
+  list(theta_hat = theta_hat, theta_mc = theta_mc, asl = asl_perm)
+}
+
+```
+
+```{r}
+# Generate a dataset from a normal distribution with mean 1 and variance 1
+set.seed(1)
+ n = 50
+ x = rnorm(n,mean=1,sd=1)
+ mean(x)
+```
+
+```{r}
+# Test the hypothesis H0: mu =1 vs H1: mu does not equal 1
+results = perm1samp(x,mu=1,alternative = 'two.sided')
+results$asl
+```
+
+```{r}
+mseq = seq(0.5,1.5,by=0.1)
+ pvals = rep(0,length(mseq))
+ for(k in 1:length(mseq)){
+ pvals[k] = perm1samp(x,mu=mseq[k])$asl
+ }
+```
+
+```{r}
+plot(mseq,pvals,type='b',xlab =  "Null value", ylab = "Permutation ASL")
+ abline(h=0.05, lty=2,col='red')
+
+```
+
+## Two Sample Permutation Test
+
+For the two sample locaton problem ,we have N=m+n observations.
+
+##### Permutation Vector(TWO SAMPLE)
+
+```{r}
+meandif <- function(x, y) {
+  mean(x) - mean(y)
+}
+
+perm_2_samp <- function( x,y ,myfun=meandif,nsamp=10000,alternative = c("two.sided", "less", "greater")){
+  
+  theta.hat =myfun(x,y)
+  
+  m=length(x)
+  n=length(y)
+  
+  N =m+n 
+  z=c(x,y)
+  
+  gmat=replicate(nsamp,sample.int(N,m))
+  
+  theta.mc=apply(gmat,2,function (g,z){myfun(z[g],z[-g])},z=z)
+  
+   if (alternative[1] == "less") {
+    aslperm = sum(theta.mc <= theta.hat)/nsamp
+  } else if (alternative[1] == "greater") {
+    aslperm = sum(theta.mc >= theta.hat)/nsamp
+  } else {  # two.sided
+    aslperm = mean(abs(theta.mc) >= abs(theta.hat))/nsamp
+  }
+  list(theta.hat = theta.hat, theta.mc = theta.mc, asl = aslperm)
+
+  
+}
+
+```
+
+```{r}
+set.seed(42)
+
+x <- rnorm(30, mean = 5, sd = 1)
+y <- rnorm(40, mean = 4.7, sd = 1)
+
+
+result <- perm_2_samp(x, y, alternative = "two.sided")
+
+print(result$theta.hat)  
+print(result$asl)        
+```
+
+```{r}
+choose(70,30)  # possible combinations 5.534774e+19 (very large) .It is called g vector
+
+
+```
+
+### Association /correlation problem
+
+#### Correlation Permutation test
+
+```{r}
+
+permcor <- function ( x,y ,myfun=meandif,nsamp=10000,alternative = c("two.sided", "less", "greater")){
+  
+  n=length(x)
+  if (length(y)!=n) stop("length of x and y must match")
+  
+  theta.hat =cor(x,y,method = 'pearson') # '"pearson", "kendall", "spearman"
+  
+}
+```

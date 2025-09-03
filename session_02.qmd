@@ -1,0 +1,199 @@
+---
+title: "Session_03"
+format: html
+editor: visual
+---
+
+## The Bootstrap :Examples
+
+when the sample is being simulated ,Some time repeated data rows or not included all data rows.
+
+1.  First we must create a function to compute the required statistic.
+
+```{r}
+
+library(ISLR)
+library(boot)
+
+data("Portfolio")
+head(Portfolio)
+
+
+alpha.fn=function(data,index){
+  X=data$X[index]
+  Y=data$Y[index]
+  return ((var(Y)-cov(X,Y))/(var(X)+var(Y)-2*cov(X,Y)))
+}
+```
+
+2.The first argument to boot() is the data ,second argument is the function that is be computed on the data and third is the number of bootstrap replicates.
+
+```{r}
+set.seed(1)
+reps <- boot(data=Portfolio,statistic = alpha.fn,R=1000)
+reps
+
+# alpha hat value  is orignal value
+```
+
+Interval
+
+```{r}
+boot.ci(reps,conf = 0.95,type = "norm")
+```
+
+```{r}
+plot(reps)
+```
+
+### Estimating The Accuracy of a Linear Regression model by Bootstrap
+
+```{r}
+set.seed(1)
+data("Auto")
+attach(Auto)
+
+
+coef.fn=function(data,index){
+  d =data[index,]
+  fit = lm(mpg ~ horsepower,data=d)
+  return (coef(fit))
+}
+
+
+res2=boot(Auto,statistic = coef.fn,R=2000)
+res2
+```
+
+```{r}
+coef.fn(Auto,1:392)
+
+```
+
+```{r}
+plot(res2,index = 2)
+
+```
+
+```{r}
+boot.ci(res2,type = 'bca',index = 1)
+```
+
+## **Cross-Validation (CV) Overview:**
+
+Cross-validation is a **resampling method** used to evaluate the performance of a model. It works by **splitting the data into multiple parts (folds)** and **training/testing the model** on different combinations of these parts.
+
+### 🔁 Iterative Process (e.g., in k-fold CV):
+
+-   In **each iteration**, the model is trained on a subset of the data (training set) and tested on the remaining data (validation set).
+
+    For example, in 5-fold CV:
+
+    Data is split into 5 parts
+
+    The model is trained on 4 parts and tested on the remaining 1 part
+
+    This process repeats 5 times, with each fold used once as the test set
+
+### 📉 MSE Calculation:
+
+In each iteration, we calculate the **Mean Squared Error (MSE)**:
+
+```         
+```
+
+### 📊 Final Result:
+
+After all iterations, the **average of all the MSEs** gives you an estimate of how well the model is expected to perform on **unseen data**:
+
+CV MSE=1k∑j=1kMSEj\text{CV MSE} = \frac{1}{k} \sum\_{j=1}\^{k} \text{MSE}\_jCV MSE=k1​j=1∑k​MSEj​
+
+```{r}
+set.seed(2)
+data = Auto
+k = 5
+
+# Randomly assign each row to a fold
+folds = data.frame(
+  Fold = sample(rep(1:k, length.out = nrow(data))),
+  Row = 1:nrow(data)
+)
+
+folds
+
+```
+
+```{r}
+MSE <-c()
+for (i in 1:max(folds$Fold)){
+  # row that are in validation set
+   valid_set <- folds$Row[folds$Fold==i]
+   
+  # training set
+   train_set <- data[-valid_set,]
+   
+  # model fitting for the training set
+   lm.fit <- lm(mpg~horsepower,data = train_set)
+   
+  # Prediction the response in validation set by using the fitted model
+   pred <- predict(lm.fit,data[valid_set,])
+   
+   MSE[i] =mean((mpg[valid_set]-pred)^2)
+}
+
+mean(MSE)
+```
+
+Using cross validation method to compare different model by using Mean square errors.when minimum MSE included model is better to rather than other model
+
+Another Example
+
+```{r}
+MSE <-c()
+for (i in 1:max(folds$Fold)){
+  # row that are in validation set
+   valid_set <- folds$Row[folds$Fold==i]
+   
+  # training set
+   train_set <- data[-valid_set,]
+   
+  # model fitting for the training set
+   lm.fit <- lm(mpg~poly(horsepower,2),data = train_set)
+   
+  # Prediction the response in validation set by using the fitted model
+   pred <- predict(lm.fit,data[valid_set,])
+   
+   MSE[i] =mean((mpg[valid_set]-pred)^2)
+}
+
+mean(MSE)
+```
+
+### CV.GLM() FOR CROSS -VALIDATION
+
+-   **`cv.glm()`** performs K-fold cross-validation on the fitted model **`glm.fit`** using the dataset **`Auto`**.
+
+<!-- -->
+
+-   The result is a list with the component **`delta`**, which contains two estimates of the cross-validation error:
+
+    -   **`delta`** is the raw cross-validation estimate of prediction error.
+
+    -   **`delta`** is a bias-corrected version.\
+        Here, you store the raw cross-validation error (mean squared error) for the polynomial model of degree **`i`** in the vector **`cv.error.5`**.
+
+```{r}
+library(boot)
+set.seed(17)
+
+cv.error.5=rep(0,5)
+
+for (i in 1:5){
+  glm.fit=glm(mpg~poly(horsepower,i),data = Auto)
+  cv.error.5[i]=cv.glm(Auto,glm.fit,K=30)$delta[1]
+  
+}
+cv.error.5
+```
+
+Excercise :
