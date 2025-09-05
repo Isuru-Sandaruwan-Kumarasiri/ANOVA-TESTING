@@ -1,0 +1,133 @@
+---
+title: "Multivariate Inference"
+format: html
+editor: visual
+---
+
+## Why do we need **multivariate inference**?
+
+Most real-world problems involve **multiple variables at once**, not just one.
+
+-    In **univariate inference**, we study properties (like mean, variance, distribution) of a **single variable**.
+
+-    In **multivariate inference**, we deal with **several variables together**, trying to understand their **joint behavior**.
+
+👉 Example: In medicine, you might measure a patient’s **blood pressure, cholesterol, and sugar level**. These aren’t independent — they are correlated.\
+👉 In finance, stock returns for different companies move together.\
+👉 In machine learning, data almost always has many features.
+
+So, we need **multivariate inference** to:
+
+1.   **Capture dependence/correlation** among variables.
+
+2.  **Make joint predictions** (not just variable by variable).
+
+3.  **Test hypotheses** about mean vectors, covariance matrices, or linear relationships among several variables.
+
+4.  **Reduce dimensionality** (e.g., PCA) while keeping the most important information.
+
+![](images/clipboard-3478280185.png)
+
+![](images/clipboard-3829654889.png)
+
+```{r}
+
+ data <- read.delim("C:/Users/Isuru Sandaruwan/OneDrive/Desktop/3.2/Advanced_Application_II/Practice/s20426/dataset/sweat.txt", header=FALSE)
+ 
+data <- data[0:4]
+
+colnames(data) <- c("subject","x1","x2","x3")
+head(data)
+```
+
+**Example :**
+
+```{r}
+library(ICSNP)
+
+Null_mean = c(4,50,10)
+
+HotellingsT2(X=data[,-1],mu=Null_mean)
+```
+
+**Assumptions :**
+
+![](images/clipboard-1144491333.png)
+
+```{r}
+library(mvnormtest)
+mshapiro.test(t(data[,-1]))
+```
+
+![](images/clipboard-3429137176.png)
+
+```{r}
+drug_data<- read.table("C:/Users/Isuru Sandaruwan/OneDrive/Desktop/3.2/Advanced_Application_II/Practice/s20426/dataset/drug.txt", header=FALSE)
+
+
+placebo_data <- read.table ("C:/Users/Isuru Sandaruwan/OneDrive/Desktop/3.2/Advanced_Application_II/Practice/s20426/dataset/placebo.txt", header=FALSE)
+
+
+```
+
+#### First we need to check for the normality of the data and we can perform the multivariate Shapiro-Wilks test for normality.
+
+```{r}
+mshapiro.test(t(drug_data))
+```
+
+```{r}
+mshapiro.test(t(placebo_data))
+```
+
+![](images/clipboard-2291314.png)
+
+```{r}
+HotellingsT2(placebo_data,drug_data)
+```
+
+Since p-value \<0.05 H0 is rejected at 5% level of significance.
+
+### MULTIVARIATE ANALYSIS OF VARIANCE (MANOVA)
+
+-   MANOVA is a generalization of Hotelling T2 test.
+
+-   When we have more than 2 multivariate normal populations and we are interested in testing for the
+    equality of the population means we perform MANOVA or Multivariate Analysis of Variance.
+
+![](images/clipboard-3380453398.png)
+
+**Example :**
+
+```{r}
+library(HSAUR)
+data("skulls")
+attach(skulls)
+```
+
+![](images/clipboard-4074846439.png)
+
+![](images/clipboard-3402033622.png)
+
+```{r}
+
+# First we read the data into the R environment and as usual we test for multivariate normality of the data.
+
+Y1 =cbind(skulls$mb,skulls$bh,skulls$bl,skulls$nh)
+mshapiro.test(t(Y1))
+```
+
+As p-value =0.1685 \> 0.05 the data is Multivariate Normal.
+
+```{r}
+manova1 <- manova(Y1~as.factor(skulls$epoch))
+summary(manova1,test='Pillai')
+```
+
+![](images/clipboard-3617162825.png)
+
+####  **So our next natural question is: Which variables are significantly different over the years?????**
+
+```{r}
+summary.aov(manova1)
+```
