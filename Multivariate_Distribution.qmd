@@ -1,0 +1,160 @@
+---
+title: "Multivariate Probability Distributions"
+format: html
+editor: visual
+---
+
+## Multivariate Probability Distributions
+
+Multivariate distributions are designed to describe the probability
+distributions of more than one random variable at the same time.
+
+**Since the variables are often correlated, exploring them
+individually would only provide limited insight about the data.**
+
+We will discuss about,
+
+ 1. Multivariate Normal Distribution
+
+2. Multivariate t-distribution
+
+![](images/clipboard-2236867302.png)
+
+```{r}
+wine <- read.csv("C:/Users/Isuru Sandaruwan/OneDrive/Desktop/3.2/Advanced_Application_II/Practice/s20426/dataset/wine.txt", header=FALSE)
+head(wine,4)
+```
+
+```{r}
+dim(wine)
+```
+
+```{r}
+names(wine)
+```
+
+```{r}
+colnames(wine) <- c('Type','Alcohol',"Malic","Ash","Alcalinity","Magnesium","Phenols","Flavanoids","Nonflavanoids","Proanthocyanins","Color","Hue","Dilution","Proline")
+
+
+str(wine)
+```
+
+```{r}
+ #Change the Type variable data type
+ wine$Type <- as.factor(wine$Type)
+ str(wine)
+```
+
+```{r}
+# Calculate the mean of the Alcohol ,Malic ,ash and Alcalin
+colMeans(wine[,2:5])
+```
+
+```{r}
+# Calculate the mean of the variables by wine type
+by(wine[2:5],wine$Type,colMeans)
+```
+
+### VARIANCE COVARIANCE MATRIX
+
+```{r}
+var.wine <- var(wine[2:5])
+var.wine
+```
+
+```{r}
+round(var.wine,2)
+```
+
+### CORRELATION MATRIX
+
+```{r}
+library(corrplot)
+cor.wine <- cor(wine[,2:5])
+round(cor.wine,2)
+```
+
+```{r}
+# Plot the correlations
+corrplot(cor.wine ,method = 'ellipse')
+
+```
+
+```{r}
+# Scatter plot matrix using the base R plot function
+pairs(wine[,2:5])
+```
+
+```{r}
+library(lattice)
+# Scatter plot matrix colored by groups
+splom(~wine[,2:5],pch=16,col=wine$Type)
+```
+
+### Multivariate Probability Distributions
+
+#### 1.Multivariate Normal Distribution
+
+![](images/clipboard-3759452134.png)
+
+```{r}
+library(MASS)
+
+set.seed(1)
+ 
+
+# Mean Vector
+mu.sim <- c(0,2)
+
+# Define Covariance Matrix
+sigma.sim <- matrix(c(10,5,5,9),ncol = 2) # covariance matrices must be symmetric.
+
+# Generate  bivariate normal distribution
+sample_distribution <- mvrnorm(n=100,mu=mu.sim,Sigma = sigma.sim)
+head(sample_distribution)
+```
+
+**Another Example 1 :**
+
+```{r}
+library(mvtnorm)
+
+set.seed(1)
+
+mu.sim <- c(2,-2,1) # define mean vector
+sigma.sim <- matrix(data=c(9,5,5,5,5,3,5,3,4),nrow=3) # define covariance vector
+
+multnorm.sample <- rmvnorm(n=100 ,mean = mu.sim, sigma = sigma.sim)
+head(multnorm.sample)
+
+
+
+```
+
+#### Another Example 2 :
+
+It can model heavier tails and are generalization of univariate
+Stundent’s t-distribution.
+
+```{r}
+library(mvtnorm)
+
+set.seed(123)
+
+# Define mean vector (delta) and covariance matrix
+mu.sim <- c(0, 2)
+sigma.sim <- matrix(c(10, 5, 5, 9), ncol = 2)  # must be symmetric
+
+# Generate 100 samples from multivariate t-distribution
+multt.sample <- rmvt(
+  n = 100,
+  sigma = sigma.sim,
+  df = 5,
+  delta = mu.sim,
+  type = "shifted"
+)
+
+head(multt.sample)
+
+```
