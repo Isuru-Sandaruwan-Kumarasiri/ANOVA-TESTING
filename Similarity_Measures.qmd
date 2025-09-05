@@ -1,0 +1,71 @@
+---
+title: "Similarity Measure"
+format: html
+editor: visual
+---
+
+## Similarity Measure
+
+-   Objects (or data points) that are **close together** are considered **similar**.
+
+<!-- -->
+
+-   If two objects are far apart, they are considered **less similar (or dissimilar)**.
+
+<!-- -->
+
+-    We use **similarity measures** to mathematically check how close two objects are.
+
+<!-- -->
+
+-    Examples:
+
+    -   **Distance** → small distance = more similar.
+
+    -   **Correlation** → high correlation = more similar.
+
+### 1.EUCLIDEAN DISTANCE
+
+![](images/clipboard-1067972216.png)
+
+```{r}
+library(stats)
+
+P <- 1:10/sum(1:10)
+Q <- 20:29/sum(20:29)
+
+x<- rbind(P,Q)
+ dist(x,method = 'euclidean')
+
+```
+
+![](images/clipboard-2704122268.png)
+
+```{r}
+dist(x, method = "minkowski")
+```
+
+![](images/clipboard-789436254.png)
+
+```{r}
+library(philentropy)
+distance(x,method = 'jaccard')
+```
+
+![](images/clipboard-812028861.png)
+
+**Example**
+
+```{r}
+#Data preparation 1
+ Murder = c(15.4,13,9,11.3,8.1,11.4) 
+ Assault = c(335,337,276,300,294,285) 
+ Rape = c(31.9,16.1,40.6,27.8,31,32.1) 
+ Urban = c(80,45,91,67,80,70) 
+ crime = cbind(Murder, Assault, Rape, Urban) 
+ row.names(crime) = c("A","B","C","D","E","F")
+ 
+ #To get the distance matrix 9
+ distance = dist(crime, method = "euclidean")
+ distance
+```
